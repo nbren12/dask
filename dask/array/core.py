@@ -2488,7 +2488,7 @@ def insert_to_ooc(out, arr, lock=True, region=None):
     if lock is True:
         lock = Lock()
 
-    def store(x, index, lock, region):
+    def store(out, x, index, lock, region):
         if lock:
             lock.acquire()
         try:
@@ -2504,9 +2504,20 @@ def insert_to_ooc(out, arr, lock=True, region=None):
 
     slices = slices_from_chunks(arr.chunks)
 
+    # if out is a delayed object update dictionary accordingly
+    try:
+        out_key = out.key
+        dsk = {}
+        dsk.update(out.dask)
+    except AttributeError:
+        out_key = out
+        dsk = {}
+
+
     name = 'store-%s' % arr.name
-    dsk = dict(((name,) + t[1:], (store, t, slc, lock, region))
-               for t, slc in zip(core.flatten(arr._keys()), slices))
+    dsk.update(dict(((name,) + t[1:], (store, out_key, t, slc, lock, region))
+                    for t, slc in zip(core.flatten(arr._keys()), slices)))
+
     return dsk
 
 

@@ -1000,14 +1000,22 @@ def test_store_delayed_target():
 
 
     # empty buffers to be used as targets
-    at = np.empty(shape=(4, 4))
-    bt = np.empty(shape=(4, 4))
+    targs = {}
+
+    def make_target(key):
+        a = np.empty((4,4))
+        targs[key] = a
+        return a
 
     # delayed calls to these targets
-    atd = delayed(lambda x:x)(at)
-    btd = delayed(lambda x:x)(bt)
+    atd = delayed(make_target)('at')
+    btd = delayed(make_target)('bt')
 
     store([a, b], [atd, btd])
+
+    at = targs['at']
+    bt = targs['bt']
+
     assert (at == 2).all()
     assert (bt == 3).all()
 
